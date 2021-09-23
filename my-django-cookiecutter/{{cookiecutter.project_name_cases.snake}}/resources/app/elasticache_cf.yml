@@ -1,0 +1,54 @@
+---
+Resources:
+  AppSecurityGroupEgressElastiCache:
+    Type: "AWS::EC2::SecurityGroupEgress"
+    Properties:
+      Description: "permit Redis (6379) to CacheSecurityGroup"
+      DestinationSecurityGroupId: !Ref CacheSecurityGroup
+      FromPort: 6379
+      GroupId: !GetAtt AppSecurityGroup.GroupId
+      IpProtocol: tcp
+      ToPort: 6379
+
+  CacheSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupDescription: "ElastiCache Security Group"
+      SecurityGroupEgress:
+        - Description: "deny all outbound"
+          IpProtocol: "-1"
+          CidrIp: "127.0.0.1/32"
+      SecurityGroupIngress:
+        - Description: "permit Redis (6379) from AppSecurityGroup"
+          FromPort: 6379
+          IpProtocol: tcp
+          SourceSecurityGroupId: !GetAtt AppSecurityGroup.GroupId
+          ToPort: 6379
+      Tags:
+        - Key: Name
+          Value: !Join [ "-", [ !Ref "AWS::StackName", elasticache ] ]
+        - Key: user:project
+          Value: osn-platform
+        - Key: user:stage
+          Value: ${self:provider.stage}
+      VpcId: !Ref VPC
+
+  CacheCluster:
+    Type: AWS::ElastiCache::CacheCluster
+    Properties:
+      AutoMinorVersionUpgrade: true
+      Engine: redis
+      CacheNodeType: ${self:custom.infrastructure.${self:provider.stage}.cache.elasticacheInstanceType, self:custom.infrastructure.default.cache.elasticacheInstanceType}
+      NumCacheNodes: 1
+      VpcSecurityGroupIds:
+        - !Ref CacheSecurityGroup
+      CacheSubnetGroupName: !Ref ElastiCacheSubnetGroup
+
+Outputs:
+  CacheClusterAddress:
+    Description: RDS Instance Address
+    Value: !GetAtt CacheCluster.RedisEndpoint.Address
+
+  CacheClusterPort:
+    Description: RDS Instance Port
+    Value: !GetAtt CacheCluster.RedisEndpoint.Port

@@ -1,0 +1,8 @@
+{
+  "project_name": "My Demo App",
+  "project_name_cases": {},
+  "app_name": "core",
+  "first_model": "MyModel",
+  "aws_profile": "default",
+  "debug": "n"
+}

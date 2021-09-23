@@ -1,0 +1,29 @@
+---
+Resources:
+  AsyncResponseDbTable:
+    Type: 'AWS::DynamoDB::Table'
+    Properties:
+      TableName: !Join ["-", [ !Ref "AWS::StackName", 'async-responses' ]]
+      Tags:
+        - Key: user:project
+          Value: osn-platform
+        - Key: user:stage
+          Value: ${self:provider.stage}
+      ProvisionedThroughput:
+        ReadCapacityUnits: "5"
+        WriteCapacityUnits: "5"
+      KeySchema:
+        - AttributeName: "Guid"
+          KeyType: "HASH"
+      AttributeDefinitions:
+        - AttributeName: "Guid"
+          AttributeType: "S"
+      TimeToLiveSpecification:
+        AttributeName: "TimeToLive"
+        Enabled: True
+
+Outputs:
+  AsyncResponseDbTableName:
+    Value: !Ref AsyncResponseDbTable
+    Export:
+      Name: !Join [ "-", [ !Ref "AWS::StackName", "async-responses-table-name" ] ]

@@ -1,0 +1,18 @@
+---
+Resources:
+  AsyncTaskQueue:
+    Type: "AWS::SQS::Queue"
+    Properties:
+      QueueName: !Join ["-", [ !Ref "AWS::StackName", 'async-requests' ]]
+      VisibilityTimeout: 300
+
+Outputs:
+  AsyncTasksQueueName:
+    Value: !GetAtt AsyncTaskQueue.QueueName
+    Export:
+      Name: !Join ["-", [ !Ref "AWS::StackName", "async-tasks-queue-name" ]]
+
+  AsyncTasksQueueUrl:
+    Value: !Join ["", ["https://sqs.", !Ref 'AWS::Region', ".amazonaws.com/", !Ref 'AWS::AccountId', "/", !GetAtt AsyncTaskQueue.QueueName]]
+    Export:
+      Name: !Join ["-", [ !Ref "AWS::StackName", "async-tasks-queue-url" ]]

@@ -1,0 +1,2 @@
+cookiecutter~=1.7.3
+inflection~=0.5.1
