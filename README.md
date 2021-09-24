@@ -25,7 +25,8 @@ Keep reading to setup your project with this cookiecutter.
 
 1. Install cookiecutter by following [this guide](https://cookiecutter.readthedocs.io/en/1.7.2/installation.html)
 2. In your terminal, go to the folder you want to create your new project in.
-3. Run: `cookiecutter gh:DaanVandenreyt/DCG`
-4. 
+3. If you have never used this cookiecutter before, run: `cookiecutter gh:DaanVandenreyt/DCG`
+   - the 'gh' is a shortcut built into cookiecutter for working with github repo's
+4. If it is not the first time, the cookiecutter will be available locally in any location, you just use: `cookiecutter DCG`
 
 
