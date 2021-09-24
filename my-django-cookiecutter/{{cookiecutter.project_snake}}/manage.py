@@ -6,7 +6,7 @@ import sys
 
 def main():
     """Run administrative tasks."""
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', '{{cookiecutter.project_name_cases.snake}}.settings.env')
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', '{{cookiecutter.project_slug}}.settings.env')
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:

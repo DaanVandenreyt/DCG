@@ -2,12 +2,12 @@ version: '3.9'
 services:
   db:
     image: postgis/postgis:12-master
-    container_name: "{{cookiecutter.project_name_cases.snake}}_db"
+    container_name: "{{cookiecutter.project_snake}}_db"
     ports:
       - "5432"
     environment:
       - POSTGRES_PASSWORD=dev
-      - POSTGRES_DB={{cookiecutter.project_name_cases.snake}}
+      - POSTGRES_DB={{cookiecutter.project_slug}}
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 10s

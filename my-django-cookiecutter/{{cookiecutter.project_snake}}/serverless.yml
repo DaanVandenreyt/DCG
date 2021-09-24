@@ -65,11 +65,11 @@ provider:
     CACHE_REDIS_PORT: !GetAtt CacheCluster.RedisEndpoint.Port
 
   stackTags:
-    user:project: {{cookiecutter.project_name_cases.snake}}
+    user:project: {{cookiecutter.project_slug}}
     user:stage: ${self:provider.stage}
 
   tags:
-    user:project: {{cookiecutter.project_name_cases.snake}}
+    user:project: {{cookiecutter.project_slug}}
     user:stage: ${self:provider.stage}
 
   # AWS IAM ROLE STATEMENTS
