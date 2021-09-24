@@ -1,0 +1,101 @@
+---
+Resources:
+  BastionEIP:
+    Type: "AWS::EC2::EIP"
+    Properties:
+      Domain: 'vpc'
+
+  BastionSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupDescription: "${self:service} bastion host (${self:provider.stage}) security group"
+      SecurityGroupIngress: ${self:custom.bastion.securityGroupIngress}
+      Tags:
+        - Key: Name
+          Value: !Join ["-", [!Ref "AWS::StackName", bastion-sg]]
+        - Key: user:project
+          Value: osn-platform
+        - Key: user:stage
+          Value: ${self:provider.stage}
+      VpcId: !Ref VPC
+
+  BastionIamRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: "ec2.amazonaws.com"
+            Action: "sts:AssumeRole"
+      Policies:
+        - PolicyName: "AllowEIPAssociation"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Action: "ec2:AssociateAddress"
+                Resource: "*"
+                Effect: Allow
+      ManagedPolicyArns:
+        - !Sub "arn:${AWS::Partition}:iam::aws:policy/AmazonSSMManagedInstanceCore"
+
+  BastionInstanceProfile:
+    Type: "AWS::IAM::InstanceProfile"
+    Properties:
+      Roles:
+        - !Ref BastionIamRole
+
+  BastionInstance:
+    Type: "AWS::EC2::Instance"
+    Properties:
+#      AdditionalInfo: String
+#      Affinity: String
+#      AvailabilityZone: String
+      BlockDeviceMappings:
+        - DeviceName: "/dev/xvda"
+          Ebs:
+            VolumeSize: 10
+            VolumeType: "gp2"
+            DeleteOnTermination: true
+      IamInstanceProfile: !Ref BastionInstanceProfile
+      ImageId: "ami-06a5303d47fbd8c60"
+      InstanceType: "t2.micro"
+      KeyName: ${self:custom.bastion.hostKeyName}
+#      SecurityGroupIds:
+#        - !GetAtt BastionSecurityGroup.GroupId
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: true
+          DeleteOnTermination: true
+          SubnetId: !Ref PublicSubnet1
+          DeviceIndex: 0
+          GroupSet:
+            - !Ref BastionSecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Join ["-", [!Ref "AWS::StackName", bastion]]
+        - Key: user:project
+          Value: osn-platform
+        - Key: user:stage
+          Value: ${self:provider.stage}
+      UserData:
+        'Fn::Base64': !Join
+          - ''
+          - - "#!/bin/bash -xe\n"
+            - "/usr/bin/yum update -y\n"
+            - "/usr/bin/yum install -y aws-cfn-bootstrap\n"
+            - "EIP_ALLOCATION_ID="
+            - Fn::GetAtt: [ BastionEIP, AllocationId ]
+            - "\n"
+            - "INSTANCE_ID=`/usr/bin/curl -sq http://169.254.169.254/latest/meta-data/instance-id`\n"
+            - "/usr/bin/aws ec2 associate-address --instance-id ${INSTANCE_ID} --allocation-id ${EIP_ALLOCATION_ID} --region "
+            - !Sub "{AWS::Region}"
+            - "\n"
+
+Outputs:
+  BastionInstancePublicDnsName:
+    Description: Bastion Host
+    Value: !GetAtt BastionInstance.PublicDnsName
+
+  BastionInstancePublicIp:
+    Description: Bastion Host
+    Value: !GetAtt BastionInstance.PublicIp

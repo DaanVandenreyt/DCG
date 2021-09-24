@@ -1,0 +1,94 @@
+---
+Resources:
+  AppSecurityGroupEgressRDS:
+    Type: "AWS::EC2::SecurityGroupEgress"
+    Properties:
+      Description: "permit PostgreSQL (5432) to DBSecurityGroup"
+      DestinationSecurityGroupId: !Ref DBSecurityGroup
+      FromPort: 5432
+      GroupId: !GetAtt AppSecurityGroup.GroupId
+      IpProtocol: tcp
+      ToPort: 5432
+
+  BastionSecurityGroupEgressRDS:
+    Type: "AWS::EC2::SecurityGroupEgress"
+    Properties:
+      Description: "permit PostgreSQL (5432) to DBSecurityGroup"
+      DestinationSecurityGroupId: !Ref DBSecurityGroup
+      FromPort: 5432
+      GroupId: !GetAtt BastionSecurityGroup.GroupId
+      IpProtocol: tcp
+      ToPort: 5432
+
+  DBSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupDescription: "RDS Security Group"
+      SecurityGroupEgress:
+        - Description: "deny all outbound"
+          IpProtocol: "-1"
+          CidrIp: "127.0.0.1/32"
+      SecurityGroupIngress:
+        - Description: "permit PostgreSQL (5432) from AppSecurityGroup"
+          FromPort: 5432
+          IpProtocol: tcp
+          SourceSecurityGroupId: !GetAtt AppSecurityGroup.GroupId
+          ToPort: 5432
+        - Description: "permit PostgreSQL (5432) from BastionSecurityGroup"
+          FromPort: 5432
+          IpProtocol: tcp
+          SourceSecurityGroupId: !GetAtt BastionSecurityGroup.GroupId
+          ToPort: 5432
+      Tags:
+        - Key: Name
+          Value: !Join ["-", [!Ref "AWS::StackName", rds]]
+        - Key: user:project
+          Value: osn-platform
+        - Key: user:stage
+          Value: ${self:provider.stage}
+      VpcId: !Ref VPC
+
+  {% raw %}
+  DBInstance:
+    DependsOn: DBSecurityGroup
+    Type: AWS::RDS::DBInstance
+    Properties:
+      Engine: Postgres
+      DBName: ${self:custom.infrastructure.${self:provider.stage}.application.databaseName, self:custom.infrastructure.default.application.databaseName}
+      DBInstanceIdentifier: "${self:service}-${self:provider.stage}"
+      MasterUsername:
+        !Join [
+          "",
+          [
+            "{{resolve:secretsmanager:",
+            !Ref DBSecret,
+            ":SecretString:username}}",
+          ],
+        ]
+      MasterUserPassword:
+        !Join [
+          "",
+          [
+            "{{resolve:secretsmanager:",
+            !Ref DBSecret,
+            ":SecretString:password}}",
+          ],
+        ]
+      DBInstanceClass: ${self:custom.infrastructure.${self:provider.stage}.database.rdsInstanceType, self:custom.infrastructure.default.database.rdsInstanceType}
+      AllocatedStorage: ${self:custom.infrastructure.${self:provider.stage}.database.rdsAllocatedStorage, self:custom.infrastructure.default.database.rdsAllocatedStorage}
+      VPCSecurityGroups:
+        - !Ref DBSecurityGroup
+      DBSubnetGroupName: !Ref RDSSubnetGroup
+      Tags:
+        - Key: Name
+          Value: "${self:service}-${self:provider.stage}"
+  {% endraw %}
+
+Outputs:
+  DBInstanceAddress:
+    Description: RDS Instance Address
+    Value: !GetAtt DBInstance.Endpoint.Address
+
+  DBInstancePort:
+    Description: RDS Instance Port
+    Value: !GetAtt DBInstance.Endpoint.Port

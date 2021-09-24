@@ -1,0 +1,69 @@
+---
+Resources:
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Aliases:
+          - ${self:custom.infrastructure.${self:provider.stage}.cdnDomainName, self:custom.infrastructure.default.cdnDomainName}
+        DefaultCacheBehavior:
+          Compress: true
+          ForwardedValues:
+            QueryString: true
+            Headers:
+              - 'Origin'
+          TargetOriginId: the-s3-bucket
+          ViewerProtocolPolicy: https-only
+        DefaultRootObject: index.html
+        CustomErrorResponses:
+          - ErrorCachingMinTTL: 300
+            ErrorCode: 403
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+          - ErrorCachingMinTTL: 300
+            ErrorCode: 404
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+        Enabled: true
+        HttpVersion: http2
+        Origins:
+          - DomainName: !Join ['', [!Ref Bucket, '.s3.amazonaws.com']]
+            Id: the-s3-bucket
+            S3OriginConfig:
+              OriginAccessIdentity:
+                !Join ['', ['origin-access-identity/cloudfront/', !Ref CloudFrontOriginAccessIdentity]]
+        PriceClass: ${self:custom.infrastructure.${self:provider.stage}.cdnPriceClass, self:custom.infrastructure.default.cdnPriceClass}
+        ViewerCertificate:
+          AcmCertificateArn: ${self:custom.infrastructure.${self:provider.stage}.cdnDomainCert, self:custom.infrastructure.default.cdnDomainCert}
+          MinimumProtocolVersion: TLSv1
+          SslSupportMethod: sni-only
+      Tags:
+        - Key: user:project
+          Value: osn-platform
+        - Key: user:domain
+          Value: ${self:custom.infrastructure.${self:provider.stage}.cdnDomainName, self:custom.infrastructure.default.cdnDomainName}
+        - Key: user:stage
+          Value: ${self:provider.stage}
+
+  CloudFrontOriginAccessIdentity:
+    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: !Sub 'CloudFront OAI for ${self:custom.infrastructure.${self:provider.stage}.cdnDomainName, self:custom.infrastructure.default.cdnDomainName}'
+
+  CloudFrontAliasDnsRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneName: ${self:custom.infrastructure.${self:provider.stage}.hostedZone, self:custom.infrastructure.default.hostedZone}
+      Comment: DNS name for my instance.
+      Name: ${self:custom.infrastructure.${self:provider.stage}.cdnDomainName, self:custom.infrastructure.default.cdnDomainName}
+      Type: CNAME
+      TTL: '900'
+      ResourceRecords:
+        - Fn::GetAtt:
+          - CloudFrontDistribution
+          - DomainName
+
+Outputs:
+  CloudfrontDistributionID:
+    Value: !Ref CloudFrontDistribution

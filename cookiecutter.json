@@ -1,0 +1,10 @@
+{
+  "project_name": "My Project",
+  "project_slug": "{{ cookiecutter.project_name|lower|replace(' ', '-') }}",
+  "project_snake": "{{ cookiecutter.project_name|lower|replace(' ', '_') }}",
+  "project_flat": "{{ cookiecutter.project_name|lower|replace(' ', '') }}",
+  "project_pascal": "{{ cookiecutter.project_name|replace(' ', '') }}",
+  "app_name": "core",
+  "aws_profile": "default",
+  "debug": ["y","n"]
+}

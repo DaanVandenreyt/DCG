@@ -1,0 +1,278 @@
+Parameters:
+  AppName:
+    Description: The application name
+    Type: String
+    Default: osn-platform
+  HostedZoneId:
+    Description: The hosted zone ID
+    Type: String
+    Default: Z069486826SVR67DDC4VN
+  User:
+    Description: The IAM user to apply the devops policy to (has to be created manually!)
+    Type: String
+    Default: osn-platform-devops
+
+Resources:
+  ServerlessDevopsPolicy:
+    Type: "AWS::IAM::ManagedPolicy"
+    Properties:
+      Users:
+        - !Ref User
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - 'ec2:*'
+            Resource: '*'
+          - Effect: Allow
+            Action:
+              - 'elasticache:*Cache*'
+              - 'elasticache:DescribeCacheSubnetGroups'
+              - 'elasticache:ModifyCacheSubnetGroup'
+              - 'elasticache:*Tags*'
+            Resource: '*'
+          - Effect: Allow
+            Action:
+              - 'rds:*DBInstance'
+              - 'rds:*DBSubnetGroup'
+              - 'rds:*DBClusterSnapshot*'
+              - 'rds:*DBClusterParameterGroup'
+              - 'rds:Describe*'
+            Resource: '*'
+          - Effect: Allow
+            Action:
+              - 'rds:*DBCluster'
+              - 'rds:*Tags*Resource'
+            Resource:
+              - !Join [ '', [ 'arn:aws:rds:*:',  !Ref 'AWS::AccountId', ':*:', !Ref AppName, '-*'] ]
+              - !Join [ '', [ 'arn:aws:rds:*:',  !Ref 'AWS::AccountId', ':*:', !Ref AppName, '-*-*-*' ] ]
+          - Effect: Allow
+            Action:
+              - 'cloudformation:List*'
+              - 'cloudformation:Get*'
+              - 'cloudformation:ValidateTemplate'
+              - 'cloudformation:DescribeStacks'
+            Resource: '*'
+          - Effect: Allow
+            Action:
+              - 'cloudformation:*Stack'
+              - 'cloudformation:*UploadBucket'
+              - 'cloudformation:Describe*'
+            Resource:
+              - !Join [ '', [ 'arn:aws:cloudformation:*:',  !Ref 'AWS::AccountId', ':stack/', !Ref AppName, '-*/*'] ]
+          - Effect: Allow
+            Action:
+              - 'lambda:Get*'
+              - 'lambda:List*'
+              - 'lambda:CreateFunction'
+            Resource: '*'
+          - Effect: Allow
+            Action:
+              - 's3:GetBucketLocation'
+              - 's3:*Bucket'
+              - 's3:ListBucketVersions'
+              - 's3:PutAccelerateConfiguration'
+              - 's3:*EncryptionConfiguration'
+              - 's3:*Object'
+              - 's3:PutBucketTagging'
+            Resource:
+              - !Join [ '', [ 'arn:aws:s3:::', !Ref AppName, '*serverlessdeploy*'] ]
+          - Effect: Allow
+            Action:
+              - 'lambda:AddPermission'
+              - 'lambda:CreateAlias'
+              - 'lambda:*Function'
+              - 'lambda:PublishVersion'
+              - 'lambda:RemovePermission'
+              - 'lambda:Update*'
+            Resource:
+              - !Join [ '', [ 'arn:aws:lambda:*:',  !Ref 'AWS::AccountId', ':function:', !Ref AppName, '-*-*'] ]
+          - Effect: Allow
+            Action:
+              - 'apigateway:*'
+            Resource:
+              - 'arn:aws:apigateway:*::/restapis*'
+              - 'arn:aws:apigateway:*::/apikeys*'
+              - 'arn:aws:apigateway:*::/usageplans*'
+              - 'arn:aws:apigateway:*::/apis*'
+              - 'arn:aws:apigateway:*::/tags*'
+              - 'arn:aws:apigateway:*::/domainnames*'
+          - Effect: Allow
+            Action:
+              - 'iam:*Role'
+            Resource:
+              - 'arn:aws:iam::*:role/*'
+          - Effect: Allow
+            Action:
+              - 'iam:*Role'
+              - 'iam:*RolePolicy'
+            Resource:
+              - 'arn:aws:iam::*:role/osn-platform-*-*-lambdaRole'
+          - Effect: Allow
+            Action:
+              - 'iam:*InstanceProfile'
+            Resource:
+              - !Join [ '', [ 'arn:aws:iam::',  !Ref 'AWS::AccountId', ':instance-profile/', !Ref AppName, '-*-*-*'] ]
+          - Effect: Allow
+            Action: 'kinesis:*'
+            Resource:
+              - !Join [ '', [ 'arn:aws:kinesis:*:',  !Ref 'AWS::AccountId', ':stream/', !Ref AppName, '-*-*'] ]
+          - Effect: Allow
+            Action:
+              - 'iam:PutRolePolicy'
+            Resource:
+              - !Join [ '', [ 'arn:aws:iam::',  !Ref 'AWS::AccountId', ':role/', !Ref AppName, '-*-*-*'] ]
+          - Effect: Allow
+            Action:
+              - 'iam:*Policy'
+              - 'iam:*RolePolicy'
+              - 'iam:List*'
+            Resource:
+              - '*'
+          - Effect: Allow
+            Action: 'sqs:*'
+            Resource:
+              - !Join [ '', [ 'arn:aws:sqs:*:',  !Ref 'AWS::AccountId', ':', !Ref AppName, '-*-*'] ]
+          - Effect: Allow
+            Action:
+              - 'cloudwatch:*'
+            Resource: '*'
+          - Action:
+              - 'logs:CreateLog*'
+              - 'logs:DeleteLogGroup'
+              - 'logs:CreateLogDelivery'
+              - 'logs:PutLogEvents'
+              - 'logs:PutSubscriptionFilter'
+            Resource:
+              - 'arn:aws:logs:*:*:*'
+            Effect: Allow
+          - Effect: Allow
+            Action:
+              - 'logs:DescribeLog*'
+              - 'logs:FilterLogEvents'
+              - 'logs:CreateLogDelivery'
+            Resource: '*'
+          - Effect: Allow
+            Action:
+              - 'events:Put*'
+              - 'events:Remove*'
+              - 'events:Delete*'
+              - 'events:DescribeRule'
+            Resource:
+              - !Join [ '', [ 'arn:aws:events:*:',  !Ref 'AWS::AccountId', ':rule/', !Ref AppName, '-*-*'] ]
+          - Effect: Allow
+            Action:
+              - 's3:*Bucket'
+              - 's3:PutBucket*'
+              - 's3:DeleteBucketPolicy'
+            Resource: '*'
+          - Effect: Allow
+            Action:
+              - 'apigateway:POST'
+              - 'apigateway:GET'
+              - 'apigateway:DELETE'
+            Resource:
+              - !Join [ '', [ 'arn:aws:apigateway:',  !Ref 'AWS::Region', '::/domainnames'] ]
+              - !Join [ '', [ 'arn:aws:apigateway:',  !Ref 'AWS::Region', '::/domainnames*'] ]
+          - Effect: Allow
+            Action:
+              - 'apigateway:PATCH'
+              - 'apigateway:POST'
+            Resource:
+              - !Join [ '', [ 'arn:aws:apigateway:',  !Ref 'AWS::Region', '::/domainnames/*/basepathmappings'] ]
+              - !Join [ '', [ 'arn:aws:apigateway:',  !Ref 'AWS::Region', '::/domainnames/*/basepathmappings*'] ]
+              - !Join [ '', [ 'arn:aws:apigateway:',  !Ref 'AWS::Region', '::/domainnames/*/basepathmappings/*'] ]
+          - Effect: Allow
+            Action:
+              - 'route53:ListHostedZones'
+            Resource: '*'
+          - Effect: Allow
+            Action:
+              - 'acm:ListCertificates'
+            Resource: '*'
+          - Effect: Allow
+            Action:
+              - 'route53:ChangeResourceRecordSets'
+              - 'route53:GetHostedZone'
+              - 'route53:ListResourceRecordSets'
+            Resource:
+              - !Join [ '', [ 'arn:aws:route53:::hostedzone/',  !Ref HostedZoneId] ]
+          - Effect: Allow
+            Action:
+              - 'route53:GetChange'
+            Resource: 'arn:aws:route53:::change/*'
+          - Effect: Allow
+            Action:
+              - 'iam:*ServiceLinkedRole'
+              - 'iam:*Role'
+            Resource: '*'
+          - Effect: Allow
+            Action:
+              - 'secretsmanager:TagResource'
+              - 'secretsmanager:*Secret'
+              - 'secretsmanager:GetRandomPassword'
+              - 'secretsmanager:CancelRotateSecret'
+              - 'secretsmanager:*SecretValue'
+              - 'secretsmanager:ListSecrets'
+            Resource: '*'
+          - Effect: Allow
+            Action:
+              - 'ssm:*'
+            Resource:
+              - !Join [ '', [ 'arn:aws:ssm:',  !Ref 'AWS::Region', ':',  !Ref 'AWS::AccountId', ':parameter/*/',  !Ref AppName, '-*/*'] ]
+          - Effect: Allow
+            Action:
+              - 'ssm:GetParameters'
+            Resource: '*'
+          - Effect: Allow
+            Action:
+              - 'cloudfront:*CloudFrontOriginAccessIdentity*'
+              - 'cloudfront:*Distribution'
+              - 'cloudfront:TagResource'
+            Resource: '*'
+          - Effect: Allow
+            Action:
+              - 'ecr:*'
+            Resource:
+              - !Join [ '', [ 'arn:aws:ecr:',  !Ref 'AWS::Region', ':',  !Ref 'AWS::AccountId', ':repository/serverless-',  !Ref AppName, '-*'] ]
+          - Effect: Allow
+            Action:
+              - 'ecr:GetAuthorizationToken'
+            Resource: '*'
+          - Effect: Allow
+            Action:
+              - 'cognito-idp:*IdentityProvider'
+              - 'cognito-idp:*UserPoolDomain'
+              - 'cognito-idp:*UserPool'
+            Resource: '*'
+          - Effect: Allow
+            Action:
+              - 'cognito-identity:*IdentityPool'
+              - 'cognito-identity:*IdentityPoolRoles'
+            Resource:
+              - !Join ['', [ 'arn:aws:cognito-identity:',  !Ref 'AWS::Region', ':',  !Ref 'AWS::AccountId', ':identitypool/']]
+              - !Join ['', [ 'arn:aws:cognito-identity:',  !Ref 'AWS::Region', ':',  !Ref 'AWS::AccountId', ':identitypool/', !Ref 'AWS::Region', ':*']]
+          - Effect: Allow
+            Action:
+              - 'es:*ElasticsearchDomain'
+              - 'es:*ElasticsearchServiceRole'
+              - 'es:*Tags'
+            Resource: '*'
+          - Effect: Allow
+            Action:
+              - 'autoscaling:*LaunchConfiguration'
+            Resource: !Join ['', [ 'arn:aws:autoscaling:',  !Ref 'AWS::Region', ':',  !Ref 'AWS::AccountId', ':launchConfiguration:*:launchConfigurationName/', !Ref AppName, '-*-BastionLaunchConfiguration-*']]
+          - Effect: Allow
+            Action:
+              - 'autoscaling:*AutoScalingGroup'
+            Resource: !Join ['', [ 'arn:aws:autoscaling:',  !Ref 'AWS::Region', ':',  !Ref 'AWS::AccountId', ':autoScalingGroup:*:autoScalingGroupName/', !Ref AppName, '-*-BastionAutoScalingGroup-*']]
+          - Effect: Allow
+            Action:
+              - 'autoscaling:Describe*'
+            Resource: '*'
+          - Effect: Allow
+            Action:
+              - 'dynamodb:*'
+            Resource:
+              - !Join ['', [ 'arn:aws:dynamodb:',  !Ref 'AWS::Region', ':',  !Ref 'AWS::AccountId', ':table/', !Ref AppName, '-*' ]]
